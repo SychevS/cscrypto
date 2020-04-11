@@ -1,7 +1,6 @@
 #include "cscrypto/maincryptofunctions.hpp"
 
 #include <cassert>
-#include <mutex>
 
 #if defined(_MSC_VER)
 #pragma warning(push)
@@ -42,15 +41,12 @@ PublicKey getMatchingPublic(const PrivateKey& privateKey) {
 }
 
 Signature generateSignature(const PrivateKey& privateKey, const Byte* data, size_t dataSize) {
-    static std::mutex s_mutex;
     assert(data != nullptr);
     unsigned long long signatureLen;
+    auto pkg = privateKey.access();
+
     Signature signature;
-    std::lock_guard<std::mutex> lock(s_mutex);
-    {
-        auto pkg = privateKey.access();
-        crypto_sign_ed25519_detached(signature.data(), &signatureLen, data, dataSize, pkg.data());
-    }
+    crypto_sign_ed25519_detached(signature.data(), &signatureLen, data, dataSize, pkg.data());
     return signature;
 }
 
